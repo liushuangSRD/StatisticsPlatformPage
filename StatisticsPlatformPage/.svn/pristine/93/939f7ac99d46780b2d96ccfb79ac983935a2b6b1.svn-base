@@ -1,0 +1,159 @@
+
+var map=new Map();
+
+var channels = new Array();
+
+var versions = new Array();
+
+function conditions(callback){
+	$(document).on("click", "#condition2 a", function() {
+		conditionClick(this);
+		callback();
+	});
+
+	$(document).on("click", "#condition3 a", function() {
+		$(this).addClass("cur").siblings().removeClass("cur");
+		callback();
+	});
+
+	$(document).on("click","#condition-game a",function(){
+		$(this).addClass("cur").siblings().removeClass("cur");
+		callback();
+	});
+
+	$("#condition4 a").click(function() {
+		$(this).addClass('cur').siblings().removeClass('cur');
+		callback();
+	});
+
+	$("#condition5 span").click(function() {
+		$(this).addClass('cur').siblings().removeClass('cur');
+		callback();
+	});
+
+	$(document).on("click", "#condition1 a", function() {
+		if($(this).index() == 0) { //点击全部显示所有channel
+			removeOthersClass(this);
+			$("#condition2").html(getDefaultConditionHTML());
+			conditionHTML($("#condition2"), channels);
+		} else { //点击其他标签
+			var c = map.get($(this).text());
+			if($(this).hasClass("cur")) { //其他元素，如果已经选中，取消当前省的channel
+				$(this).find('img').remove();
+				if($(this).siblings('.cur').length == 0) { //如果是最后一个cur元素，取消后选中全部标签
+					$("#condition1 a:eq(0)").click();
+					return false;
+				}
+				for(var i = 0; i < c.length; i++) { //取消对应的渠道信息
+					$("#condition2 a").each(function() {
+						if($(this).text() == c[i]) {
+							$(this).remove();
+						}
+					})
+				}
+			} else { //如果没有选中
+				$(this).append(getCancelImg());
+				if($("#condition1 a").eq(0).hasClass("cur")) {
+					$("#condition1 a").eq(0).removeClass("cur"); //取消第一个按钮的cur
+					$("#condition2").html(getDefaultConditionHTML);
+				}
+				conditionHTML($("#condition2"), c); //载入当前省份的信息
+			}
+			$(this).toggleClass("cur");
+		}
+		callback();
+	});
+}
+
+
+function conditionClick(o) {
+	var all = $(o).siblings().first();
+	if($(o).index() == 0) {
+		removeOthersClass(o);
+	} else {
+		if($(o).hasClass('cur')) {
+			$(o).find('img').remove();
+			if($(o).siblings('.cur').length == 0) { //如果是最后一个cur元素，取消后选中全部标签
+				$(all).click();
+				return false;
+			}
+		} else {
+			$(o).append(getCancelImg());
+			if($(all).hasClass("cur")) {
+				$(all).removeClass("cur"); //取消第一个按钮的cur
+			}
+		}
+		$(o).toggleClass("cur");
+	}
+}
+
+//点击全部按钮之后移除其他按钮的选中状态
+function removeOthersClass(o) {
+	$(o).siblings().removeClass("cur").find('img').remove();
+	$(o).addClass("cur");
+}
+
+//取消图标
+function getCancelImg() {
+	return '<img src="images/x.jpg" alt="" width="22" height="24">';
+}
+
+//默认的全部按钮
+function getDefaultConditionHTML() {
+	return '<a href="javascript:void(0)" class="cur">全部</a>';
+}
+
+function conditionHTML(o, arr) {
+	for(var i = 0; i < arr.length; i++) {
+		$(o).append('<a href="javascript:void(0)">' + arr[i] + '</a>');
+	}
+}
+
+function loadConditions() {
+
+	jsonpAjax("/common/channel", "", true, function(data) {
+		var obj = data.result;
+		for(var i = 0; i < obj.length; i++) {
+			map.put(obj[i].key, obj[i].value);
+			$("#condition1").append('<a href="javascript:void(0)">' + obj[i].key + '</a>');
+			for(var j = 0; j < obj[i].value.length; j++) {
+				channels.push(obj[i].value[j]);
+				$("#condition2").append('<a href="javascript:void(0)">' + obj[i].value[j] + '</a>');
+			}
+		}
+	});
+
+	jsonpAjax("/common/version", "", true, function(data) {
+		var obj = data.result;
+		for(var i = 0; i < obj.length; i++) {
+			versions.push(obj[i]);
+			$("#condition3").append('<a href="javascript:void(0)">' + obj[i] + '</a>')
+		}
+	});
+
+}
+
+
+function getCurVal(pdiv) {
+	var objs = $(pdiv).find('.cur');
+	var c = new Array();
+	for (var i = 0; i < objs.length; i++) {
+		var id = $(objs[i]).attr("val");
+		if (!isEmpty(id)) {
+			c.push(id);
+		}
+	}
+	return c;
+}
+
+function getCurText(pdiv) {
+	var objs = $(pdiv).find('.cur');
+	var c = new Array();
+	for (var i = 0; i < objs.length; i++) {
+		var p = $(objs[i]).text();
+		if (p != '全部') {
+			c.push(p);
+		}
+	}
+	return c;
+}
